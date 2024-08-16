@@ -1,0 +1,10 @@
+{
+	"id": "solo-gamer",
+	"name": "Solo Gamer",
+	"version": "1.0.0",
+	"minAppVersion": "0.3.0",
+	"description": "The plugin adds functionality that privides solo gaming and writing prompts based on the TinyD6 game system.",
+	"author": "Strye",
+	"authorUrl": "https://github.com/strye/md-extensions-obsidian",
+	"isDesktopOnly": false
+}

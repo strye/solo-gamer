@@ -1,0 +1,15 @@
+{
+	"name": "solo-gamer",
+	"version": "1.0.0",
+	"description": "This Obsidian plugin adds functionality that privides solo gaming and writing prompts.",
+	"main": "main.js",
+	"scripts": {
+		"build": "rollup --config",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"author": "Will Strye",
+	"license": "ISC",
+	"devDependencies": {
+		"rollup-plugin-copy": "^3.4.0"
+	}
+}
