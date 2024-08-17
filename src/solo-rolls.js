@@ -22,16 +22,15 @@ class SoloRolls {
 		return rolls;
 	}
 
-
-	static askYesNo(adv = 0, dis = 0) {
+	static fuV1Roll(adv = 0, dis = 0) {
 		let dice = 1, extra = adv - dis, passive = true;
 		if (extra < 0) { extra = extra*-1; passive = false;}
 		dice += extra;
 
-		let res = { diceRolls: SoloRolls.D6Array(dice), adv: passive, final: 0, display: ''},
+		let diceRolls = SoloRolls.D6Array(dice),
 		cur = 0;
 
-		res.diceRolls.forEach(roll => {
+		diceRolls.forEach(roll => {
 			if (passive) {
 				cur = (roll > cur)? roll: cur;
 			} else {
@@ -39,8 +38,28 @@ class SoloRolls {
 			}
 		});
 
+		return cur;
+	}
 
-		res.final = cur;
+	static fuV2Roll(adv = 0, dis = 0) {
+		// roll action dice
+		let actDice = SoloRolls.D6Array(adv+1);
+
+		// roll danger dice
+		for (let d = 0; d < dis; d++) {
+			let dd = SoloRolls.D6(),
+			i = actDice.findIndex(dice => dice === dd);
+
+			if (i > -1) { actDice.splice(i, 1); }
+		}
+
+		return Math.max(...actDice);
+	}
+
+
+	static askYesNo(adv = 0, dis = 0) {
+		let roll = SoloRolls.fuV2Roll(adv, dis),
+		res = { actDice: adv, danDice: dis, final: roll, display: ''};
 
 		switch (res.final) {
 			case 6: res.display = "Yes, and..."; break;
@@ -53,11 +72,10 @@ class SoloRolls {
 
 		return res;
 	}
-	static askComplex(cnt = 2) {
-		return {
-			display: "It could have happened this way...",
-			images: SoloRolls.getInspired()
-		}
+	static askComplex(adv = 0, dis = 0) {
+		let res = SoloRolls.askYesNo(adv, dis);
+		res.images = SoloRolls.getInspired();
+		return res;
 	}
 	static getInspired(count = 2, deck = "icons") {
 		let res = [];

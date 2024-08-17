@@ -59,6 +59,25 @@ class TinySoloSettingTab extends obsidian.PluginSettingTab {
 			});
 		})
 
+		new obsidian.Setting(containerEl)
+		.setName("Size factor")
+		.setDesc("Select the dispaly size (px-width) of cards.")
+		.addDropdown((dropDown) => {
+			dropDown.addOption('wmicro', 'micro (70)')
+			.addOption('wtiny', 'tiny (100)')
+			.addOption('wsmall', 'small (200)')
+			.addOption('ws-med', 'small-med (300)')
+			.addOption('wm-sm', 'med-small (400)')
+			.addOption('wmed', 'medium (500)')
+			.addOption('wm-tl', 'med-tall (600)')
+			.addOption('wtall', 'tall (700)')
+			.addOption('wfull', 'full (100%)')
+			.setValue(this.plugin.settings.cardSize)
+			.onChange(async (value) =>	{
+				this.plugin.settings.cardSize = value;
+				await this.plugin.saveSettings();
+			});
+		})
 
 	}
 };

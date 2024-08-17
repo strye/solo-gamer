@@ -63,6 +63,25 @@ class TinySoloSettingTab extends obsidian.PluginSettingTab {
 			});
 		});
 
+		new obsidian.Setting(containerEl)
+		.setName("Size factor")
+		.setDesc("Select the dispaly size (px-width) of cards.")
+		.addDropdown((dropDown) => {
+			dropDown.addOption('wmicro', 'micro (70)')
+			.addOption('wtiny', 'tiny (100)')
+			.addOption('wsmall', 'small (200)')
+			.addOption('ws-med', 'small-med (300)')
+			.addOption('wm-sm', 'med-small (400)')
+			.addOption('wmed', 'medium (500)')
+			.addOption('wm-tl', 'med-tall (600)')
+			.addOption('wtall', 'tall (700)')
+			.addOption('wfull', 'full (100%)')
+			.setValue(this.plugin.settings.cardSize)
+			.onChange(async (value) =>	{
+				this.plugin.settings.cardSize = value;
+				await this.plugin.saveSettings();
+			});
+		});
 
 	}
 }
@@ -16668,16 +16687,15 @@ class SoloRolls {
 		return rolls;
 	}
 
-
-	static askYesNo(adv = 0, dis = 0) {
+	static fuV1Roll(adv = 0, dis = 0) {
 		let dice = 1, extra = adv - dis, passive = true;
 		if (extra < 0) { extra = extra*-1; passive = false;}
 		dice += extra;
 
-		let res = { diceRolls: SoloRolls.D6Array(dice), adv: passive, final: 0, display: ''},
+		let diceRolls = SoloRolls.D6Array(dice),
 		cur = 0;
 
-		res.diceRolls.forEach(roll => {
+		diceRolls.forEach(roll => {
 			if (passive) {
 				cur = (roll > cur)? roll: cur;
 			} else {
@@ -16685,8 +16703,28 @@ class SoloRolls {
 			}
 		});
 
+		return cur;
+	}
 
-		res.final = cur;
+	static fuV2Roll(adv = 0, dis = 0) {
+		// roll action dice
+		let actDice = SoloRolls.D6Array(adv+1);
+
+		// roll danger dice
+		for (let d = 0; d < dis; d++) {
+			let dd = SoloRolls.D6(),
+			i = actDice.findIndex(dice => dice === dd);
+
+			if (i > -1) { actDice.splice(i, 1); }
+		}
+
+		return Math.max(...actDice);
+	}
+
+
+	static askYesNo(adv = 0, dis = 0) {
+		let roll = SoloRolls.fuV2Roll(adv, dis),
+		res = { actDice: adv, danDice: dis, final: roll, display: ''};
 
 		switch (res.final) {
 			case 6: res.display = "Yes, and..."; break;
@@ -16699,11 +16737,10 @@ class SoloRolls {
 
 		return res;
 	}
-	static askComplex(cnt = 2) {
-		return {
-			display: "It could have happened this way...",
-			images: SoloRolls.getInspired()
-		}
+	static askComplex(adv = 0, dis = 0) {
+		let res = SoloRolls.askYesNo(adv, dis);
+		res.images = SoloRolls.getInspired();
+		return res;
 	}
 	static getInspired(count = 2, deck = "icons") {
 		let res = [];
@@ -16739,7 +16776,8 @@ class SoloRolls {
 const DEFAULT_SETTINGS = {
 	imageSet: "icons",
 	imageCount: 2,
-	imageSize: "wsmall"
+	imageSize: "wtiny",
+	cardSize: "wsmall"
 };
 
 class SoloManager extends obsidian$1.Plugin {
@@ -16761,10 +16799,9 @@ class SoloManager extends obsidian$1.Plugin {
 				let val = "\n---\n";
 				val += "> It could have happened like this...\n";
 				im.forEach(card => {
-					let orienation = card.upsidedown ? "flip-xy+" : "";
-					val += `![[${card.source}|${orienation}${this.settings.imageSize}]] `;
+					val += `  ![[${card.source}|${this.settings.imageSize}]]`;
 				});
-				val += "\n\n";
+				val += "\n---\n\n";
 
 				editor.setSelection({ line: line, ch: 0 }, { line: line, ch: lineTxt.length });
 				editor.replaceSelection(val);
@@ -16779,16 +16816,15 @@ class SoloManager extends obsidian$1.Plugin {
 				const { line } = editor.getCursor(),
 				lineTxt = editor.getLine(line);
 
-				let imgCnt = this.settings.imageCount || 1;
+				let imgCnt = this.settings.imageCount || 2;
 				if (lineTxt.length > 0) imgCnt = parseInt(lineTxt);
 
 				let im = SoloRolls.getInspired(imgCnt, "icons");
 				let val = "\n---\n";
 				im.forEach(card => {
-					let orienation = card.upsidedown ? "flip-xy+" : "";
-					val += `![[${card.source}|${orienation}${this.settings.imageSize}]] `;
+					val += `  ![[${card.source}|${this.settings.imageSize}]]`;
 				});
-				val += "\n\n";
+				val += "\n---\n\n";
 
 				editor.setSelection({ line: line, ch: 0 }, { line: line, ch: lineTxt.length });
 				editor.replaceSelection(val);
@@ -16797,22 +16833,22 @@ class SoloManager extends obsidian$1.Plugin {
 
 		this.addCommand({
 			id: "view-fate",
-			name: "Consult the Oracle",
-			hotkeys: [{ modifiers: ["Alt", "Shift"], key: "o" }],
+			name: "The cards show your fate...",
+			hotkeys: [{ modifiers: ["Alt", "Shift"], key: "f" }],
 			editorCallback: (editor, view) => { //editor: Editor, view: MarkdownView
 				const { line } = editor.getCursor(),
 				lineTxt = editor.getLine(line);
 
-				let imgCnt = this.settings.imageCount || 1;
+				let imgCnt = 3;
 				if (lineTxt.length > 0) imgCnt = parseInt(lineTxt);
 
 				let im = SoloRolls.getInspired(imgCnt, "tarot");
-				let val = "\n---\n";
+				let val = "\n---\n> The cards show your fate...\n";
 				im.forEach(card => {
 					let orienation = card.upsidedown ? "flip-xy+" : "";
-					val += `![[${card.source}|${orienation}${this.settings.imageSize}]] `;
+					val += `  ![[${card.source}|${orienation}${this.settings.cardSize}]]`;
 				});
-				val += "\n\n";
+				val += "\n---\n\n";
 
 				editor.setSelection({ line: line, ch: 0 }, { line: line, ch: lineTxt.length });
 				editor.replaceSelection(val);
@@ -16861,6 +16897,36 @@ class SoloManager extends obsidian$1.Plugin {
 			},
 		});
 
+		this.addCommand({
+			id: "ask-complex",
+			name: "Consult the Oracle...",
+			hotkeys: [{ modifiers: ["Alt", "Shift"], key: "o" }],
+			editorCallback: (editor, view) => { //editor: Editor, view: MarkdownView
+				const { line } = editor.getCursor(),
+				lineTxt = editor.getLine(line);
+
+				let adv = 0, dis = 0;
+				lineTxt.split('').forEach(ch => {
+					if (ch === '+') adv++;
+					if (ch === '-') dis++;
+				});
+
+				let res = SoloRolls.askComplex(adv, dis);
+
+				// let val = `> ${res.display} (${res.final}, ${lineTxt})\n\n`;
+				let val = "\n---\n";
+				val += `> ${res.display} (${res.final}, ${lineTxt})\n`;
+				res.images.forEach(card => {
+					val += `  ![[${card.source}|${this.settings.imageSize}]]`;
+				});
+				val += "\n---\n\n";
+
+
+
+				editor.setSelection({ line: line, ch: 0 }, { line: line, ch: lineTxt.length });
+				editor.replaceSelection(val);
+			},
+		});
 	}
 
 

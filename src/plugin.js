@@ -6,7 +6,8 @@ import SoloRolls from './solo-rolls.js';
 const DEFAULT_SETTINGS = {
 	imageSet: "icons",
 	imageCount: 2,
-	imageSize: "wsmall"
+	imageSize: "wtiny",
+	cardSize: "wsmall"
 };
 const writeLog = false
 
@@ -29,10 +30,9 @@ class SoloManager extends Plugin {
 				let val = "\n---\n"
 				val += "> It could have happened like this...\n";
 				im.forEach(card => {
-					let orienation = card.upsidedown ? "flip-xy+" : "";
-					val += `![[${card.source}|${orienation}${this.settings.imageSize}]] `
+					val += `  ![[${card.source}|${this.settings.imageSize}]]`
 				});
-				val += "\n\n"
+				val += "\n---\n\n"
 				if (writeLog) console.log(val);
 
 				editor.setSelection({ line: line, ch: 0 }, { line: line, ch: lineTxt.length })
@@ -48,16 +48,15 @@ class SoloManager extends Plugin {
 				const { line } = editor.getCursor(),
 				lineTxt = editor.getLine(line);
 
-				let imgCnt = this.settings.imageCount || 1;
+				let imgCnt = this.settings.imageCount || 2;
 				if (lineTxt.length > 0) imgCnt = parseInt(lineTxt);
 
 				let im = SoloRolls.getInspired(imgCnt, "icons");
 				let val = "\n---\n"
 				im.forEach(card => {
-					let orienation = card.upsidedown ? "flip-xy+" : "";
-					val += `![[${card.source}|${orienation}${this.settings.imageSize}]] `
+					val += `  ![[${card.source}|${this.settings.imageSize}]]`
 				});
-				val += "\n\n"
+				val += "\n---\n\n"
 
 				editor.setSelection({ line: line, ch: 0 }, { line: line, ch: lineTxt.length })
 				editor.replaceSelection(val);
@@ -66,22 +65,22 @@ class SoloManager extends Plugin {
 
 		this.addCommand({
 			id: "view-fate",
-			name: "Consult the Oracle",
-			hotkeys: [{ modifiers: ["Alt", "Shift"], key: "o" }],
+			name: "The cards show your fate...",
+			hotkeys: [{ modifiers: ["Alt", "Shift"], key: "f" }],
 			editorCallback: (editor, view) => { //editor: Editor, view: MarkdownView
 				const { line } = editor.getCursor(),
 				lineTxt = editor.getLine(line);
 
-				let imgCnt = this.settings.imageCount || 1;
+				let imgCnt = 3;
 				if (lineTxt.length > 0) imgCnt = parseInt(lineTxt);
 
 				let im = SoloRolls.getInspired(imgCnt, "tarot");
-				let val = "\n---\n"
+				let val = "\n---\n> The cards show your fate...\n"
 				im.forEach(card => {
 					let orienation = card.upsidedown ? "flip-xy+" : "";
-					val += `![[${card.source}|${orienation}${this.settings.imageSize}]] `
+					val += `  ![[${card.source}|${orienation}${this.settings.cardSize}]]`
 				});
-				val += "\n\n"
+				val += "\n---\n\n"
 
 				editor.setSelection({ line: line, ch: 0 }, { line: line, ch: lineTxt.length })
 				editor.replaceSelection(val);
@@ -133,6 +132,39 @@ class SoloManager extends Plugin {
 			},
 		});
 
+		this.addCommand({
+			id: "ask-complex",
+			name: "Consult the Oracle...",
+			hotkeys: [{ modifiers: ["Alt", "Shift"], key: "o" }],
+			editorCallback: (editor, view) => { //editor: Editor, view: MarkdownView
+				const { line } = editor.getCursor(),
+				lineTxt = editor.getLine(line);
+
+				let adv = 0, dis = 0;
+				lineTxt.split('').forEach(ch => {
+					if (ch === '+') adv++;
+					if (ch === '-') dis++;
+				});
+				if (writeLog) console.log(adv, dis);
+
+				let res = SoloRolls.askComplex(adv, dis);
+
+				if (writeLog) console.log(res);
+
+				// let val = `> ${res.display} (${res.final}, ${lineTxt})\n\n`;
+				let val = "\n---\n"
+				val += `> ${res.display} (${res.final}, ${lineTxt})\n`;
+				res.images.forEach(card => {
+					val += `  ![[${card.source}|${this.settings.imageSize}]]`
+				});
+				val += "\n---\n\n"
+
+
+
+				editor.setSelection({ line: line, ch: 0 }, { line: line, ch: lineTxt.length })
+				editor.replaceSelection(val);
+			},
+		});
 	}
 
 
