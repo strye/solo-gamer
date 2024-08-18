@@ -1,6 +1,6 @@
 {
 	"name": "solo-gamer",
-	"version": "0.6.0",
+	"version": "0.6.2",
 	"description": "This Obsidian plugin adds functionality that privides solo gaming and writing prompts.",
 	"main": "main.js",
 	"scripts": {
